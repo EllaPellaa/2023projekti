@@ -1,25 +1,15 @@
-#include "leds.h"
+#ifndef LEDS_H
+#define LEDS_H
+#include "Arduino.h"
 
+//Kerrotaan, minkä nimisiä aliohjelmia sekä muuttujia tullaan käyttämään.
 
-void initializeLeds()
-{
-// see requirements for this function from leds.h
-}
+void initializeLeds();
 
-void setLed(byte ledNumber)
-{
-// see requirements for this function from leds.h
+void setLed(byte ledNumber);
 
-}
+void clearAllLeds(void);
 
+void setAllLeds(void);
 
-void clearAllLeds()
-{
-// see requirements for this function from leds.h
- 
-}
-
-void setAllLeds()
-{
-// see requirements for this function from leds.h
-}
+#endif
