@@ -6,12 +6,12 @@
 volatile int randomNumbers[100];
 volatile int userNumbers[100];
 volatile int currentNum = 0; 
+volatile int currentUserNum = 0;
 volatile bool timeToCheckGameStatus = false;
 
 void setup()
 {
   Serial.begin(9600);
-  pinMode(6,INPUT_PULLUP);
   /*
     Initialize here all modules
   */
@@ -27,7 +27,7 @@ void loop()
 	need for checking the game status
   */
   if(timeToCheckGameStatus == true) {
-    checkGame(userNumbers[currentNum]);
+    checkGame(userNumbers[currentUserNum]);
   }
 }
 
@@ -39,16 +39,16 @@ ISR(PCINT2_vect) {
    */
 
    if (digitalRead(2) == LOW) {
-      userNumbers[currentNum] = 0;
+      userNumbers[currentUserNum] = 0;
       timeToCheckGameStatus = true;
    } else if (digitalRead(3) == LOW) {
-      userNumbers[currentNum] = 1;
+      userNumbers[currentUserNum] = 1;
       timeToCheckGameStatus = true;
    } else if (digitalRead(4) == LOW) {
-      userNumbers[currentNum] = 2;
+      userNumbers[currentUserNum] = 2;
       timeToCheckGameStatus = true;
    } else if (digitalRead(5) == LOW) {
-      userNumbers[currentNum] = 3;
+      userNumbers[currentUserNum] = 3;
       timeToCheckGameStatus = true;
    }
 
@@ -66,6 +66,7 @@ ISR(TIMER1_COMPA_vect)
   }
 
   randomNumbers[currentNum] = random(0,4);
+  currentNum++;
   /*
     Here you generate a random number that is used to
 	set certain led.
@@ -106,11 +107,11 @@ void initializeTimer(void)
 void checkGame(byte nbrOfButtonPush)
 {
 	// see requirements for the function from SpedenSpelit.h
-  if (randomNumbers[currentNum] != nbrOfButtonPush) {
+  if (randomNumbers[currentUserNum] != nbrOfButtonPush) {
     stopTheGame();
     timeToCheckGameStatus = false;
-  } else if (randomNumbers[currentNum] == nbrOfButtonPush){
-    currentNum++;
+  } else if (randomNumbers[currentUserNum] == nbrOfButtonPush){
+    currentUserNum++;
     timeToCheckGameStatus = false;
   }
 }
@@ -123,6 +124,7 @@ void initializeGame()
   randomNumbers[100] = 0;
   userNumbers[100] = 0;
   currentNum = 0; 
+  currentUserNum = 0;
 }
 
 void startTheGame()
