@@ -15,8 +15,11 @@ void setup()
   /*
     Initialize here all modules
   */
-
+  initializeDisplay();
+  initializeLeds();
   initializeTimer();
+
+  showResult(0);
 }
 
 void loop()
@@ -66,6 +69,8 @@ ISR(TIMER1_COMPA_vect)
   }
 
   randomNumbers[currentNum] = random(0,4);
+  clearAllLeds();
+  setLed(randomNumbers[currentNum]);
   currentNum++;
   /*
     Here you generate a random number that is used to
@@ -92,7 +97,6 @@ void initializeTimer(void)
   PCMSK2 |= B11111100; //Portit 2-7 aktiivisiksi, muutetaan tarvittaessa
 
   //Timer
-  cli(); //Lopetetaan interruptit, kunnes seuraavat asiat tehty
   TCCR1A = 0; //Resetataan tämä nollaksi
   TCCR1B = 0; //Tämä myös
 
@@ -101,7 +105,6 @@ void initializeTimer(void)
   //Lasketaan tähän luku, johon asti timerin pitää laskea sekunnin keskeytyksen saamiseksi
   OCR1A = 62500;
   TCNT1  = 0;
-  sei(); //Jatketaan interrupteja
 }
 
 void checkGame(byte nbrOfButtonPush)
@@ -112,6 +115,7 @@ void checkGame(byte nbrOfButtonPush)
     timeToCheckGameStatus = false;
   } else if (randomNumbers[currentUserNum] == nbrOfButtonPush){
     currentUserNum++;
+    showResult(currentUserNum);
     timeToCheckGameStatus = false;
   }
 }
@@ -125,6 +129,7 @@ void initializeGame()
   userNumbers[100] = 0;
   currentNum = 0; 
   currentUserNum = 0;
+  showResult(0);
 }
 
 void startTheGame()
