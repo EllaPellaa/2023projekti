@@ -431,6 +431,7 @@ void saveResult() {
         strcpy(leaderBoard[4][1], itoa(currentUserNum, numArr, 10));
         strcpy(leaderBoard[4][0], name);
     }
+    writeLeaderboardToEEPROM();
     gameStatus = 3;
     showLeaderboard();
 }
@@ -518,6 +519,8 @@ void clearScreen() {
 void initLeaderboard() {
     TFTscreen.begin();
 
+    readLeaderboardFromEEPROM();
+
     // clear the screen with a black background
     TFTscreen.background(0, 0, 0);
     //set the text size
@@ -525,3 +528,81 @@ void initLeaderboard() {
     //set text color
     TFTscreen.stroke(255, 255, 255);
 }
+
+// ***************************
+// EEPROM TALLENNUSJUTUT
+// ***************************
+
+// TALLENNUS EEPROMIIN
+// *******************
+
+void writeLeaderboardToEEPROM(){
+
+  int nimiAddress = 1;
+  int pisteAddress = 8;
+  byte length = 7;
+  char nimi[7];
+  for(int x = 0; x<5; x++){
+
+    strcpy(nimi,leaderBoard[x][0];
+
+    int pisteet;
+    pisteet = atoi(leaderBoard[x][1]);
+
+    for(int i = 0; i<length; i++){
+    
+      EEPROM.update(nimiAddress + i, nimi[i]);
+    }
+    EEPROM.update(pisteAddress,pisteet);
+
+    nimiAddress+=8;
+    pisteAddress+=8;
+  
+  }
+
+  }
+//0 "1 2 3 4 5 6 7" 8
+// tavut, joita käytetään eepromissa (yht. 7 tekstiä, 1 on numerot)
+
+// TIETOJEN SIIRTO TAULUKKOON
+// ***************************
+
+void readLeaderboardFromEEPROM(){
+  int nimiAddress = 1;    //tallentavien ensimmäinen tavu
+  int pisteAddress = 8;  //kahdeksas tavu
+  byte length = 7;
+  char numArray[16];
+  for(int index=0; index<5; index++){
+    char nimi[7];
+    
+    for(int x=0; x<length; x++){
+      nimi[x] = EEPROM.read(nimiAddress + x);
+    }
+    
+    int pisteet = EEPROM.read(pisteAddress);
+    
+    strcpy(leaderBoard[index][0], nimi);
+    strcpy(leaderBoard[index][1], itoa(pisteet, numArray, 10));
+    nimiAddress+=8;
+    pisteAddress+=8;
+  }
+
+
+}
+
+    /* SELECT * FROM Leaderboard_ledinaytto WHERE ManneApproved = TRUE
+
+              ⨻This query returned no results.
+    
+
+                              _____________
+                             /             \
+                                  --    ---
+                            | --   u      u  
+                             )   \___/  \___/
+                                      >                   
+                                  \_______/              
+                                                        
+    */
+
+
