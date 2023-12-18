@@ -5,6 +5,7 @@
 #include "leds.h"
 #include "SpedenSpelit.h"
 #include "leaderboard.h"
+#include <EEPROM.h>
 
 volatile int randomNumbers[100];
 volatile int userNumbers[100];
@@ -538,24 +539,24 @@ void initLeaderboard() {
 
 void writeLeaderboardToEEPROM(){
 
-  int nimiAddress = 1;
-  int pisteAddress = 8;
-  byte length = 7;
+  int nimiAddress = 1;            // Index sija 2, josta lähtien EEPROMin sisälle kirjoitetaan indexiin 7 saakka.
+  int pisteAddress = 8;         // Index sija 8, johon pisteet tallennetaan int muodossa.
+  byte length = 7;          // nimen merkkipituus
   char nimi[7];
-  for(int x = 0; x<5; x++){
+  for(int x = 0; x<5; x++){   // suoritetaan viisi kertaa; kirjoitetaan EEPROMiin kaikki taulukon viisi tulosta.
 
-    strcpy(nimi,leaderBoard[x][0];
+    strcpy(nimi,leaderBoard[x][0];  //napataan nimi taulukosta  
 
     int pisteet;
-    pisteet = atoi(leaderBoard[x][1]);
+    pisteet = atoi(leaderBoard[x][1]);  //.. ja pistetulos
 
-    for(int i = 0; i<length; i++){
+    for(int i = 0; i<length; i++){  // Kirjoitetaan nimi EEPROMiin tavu kerrallaan, eli aina 7 kertaa
     
       EEPROM.update(nimiAddress + i, nimi[i]);
     }
-    EEPROM.update(pisteAddress,pisteet);
+    EEPROM.update(pisteAddress,pisteet);  //.. jonka jälkeen kirjoitetaan pisteet.
 
-    nimiAddress+=8;
+    nimiAddress+=8;     // Lisätään 
     pisteAddress+=8;
   
   }
