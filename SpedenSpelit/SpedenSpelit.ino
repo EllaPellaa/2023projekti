@@ -534,6 +534,11 @@ void initLeaderboard() {
 // EEPROM TALLENNUSJUTUT
 // ***************************
 
+//EEPROM on pysyvä tallennustila, johon UNOssa mahtuu yhteensä 1024 tavua. Näihin tavuihin voidaan syöttää tietoa, jolloin 
+// niihin pääsee käsiksi virrankatkaisun jälkeenkin. Tavuihin kuitenkin voidaan syöttää pelkkiä numeroita, mutta merkkejäkin
+// sillä on mahdollista tallentaa muunnoskomentojen avulla koodissa.
+// EEPROM on kätevä tallennuspaikka UNOssa, sillä se löytyy jo raudasta. Muutoin jouduttaisiin käyttää erikseen esim. SD-korttia.
+
 // TALLENNUS EEPROMIIN
 // *******************
 
@@ -545,7 +550,7 @@ void writeLeaderboardToEEPROM(){
   char nimi[7];
   for(int x = 0; x<5; x++){   // suoritetaan viisi kertaa; kirjoitetaan EEPROMiin kaikki taulukon viisi tulosta.
 
-    strcpy(nimi,leaderBoard[x][0];  //napataan nimi taulukosta  
+    strcpy(nimi,leaderBoard[x][0]);  //napataan nimi taulukosta  
 
     int pisteet;
     pisteet = atoi(leaderBoard[x][1]);  //.. ja pistetulos
@@ -556,14 +561,19 @@ void writeLeaderboardToEEPROM(){
     }
     EEPROM.update(pisteAddress,pisteet);  //.. jonka jälkeen kirjoitetaan pisteet.
 
-    nimiAddress+=8;     // Lisätään 
-    pisteAddress+=8;
+    nimiAddress+=8;     // Lisätään yhden pelaajan tuloksen kuluttama tavumäärä yhteensä, jolloin 
+    pisteAddress+=8;    //    tallennus suoritetaan heti sen jälkeen:
   
+//                        0 (1 2 3 4 5 6 7 8) (9 10 11 12 13 14 15 16) 17
+//                        |        /\                    /\
+//                        |     pelaaja 1 tulos       pelaaja 2 tulos
+//                        |
+//   tätä tavua en käytännyt, sillä se olisi ollut hyödyllinen paikka sijoittaa taulukon pituus, jos se olisi tuntematon.
   }
+}
 
-  }
-//0 "1 2 3 4 5 6 7" 8
-// tavut, joita käytetään eepromissa (yht. 7 tekstiä, 1 on numerot)
+
+
 
 // TIETOJEN SIIRTO TAULUKKOON
 // ***************************
@@ -571,21 +581,21 @@ void writeLeaderboardToEEPROM(){
 void readLeaderboardFromEEPROM(){
   int nimiAddress = 1;    //tallentavien ensimmäinen tavu
   int pisteAddress = 8;  //kahdeksas tavu
-  byte length = 7;
-  char numArray[16];
+  byte length = 7;    //merkkipituus
+  char numArray[16];        //numeron muutoksessa charriksi käytettävä muuttuja
   for(int index=0; index<5; index++){
-    char nimi[7];
+    char nimi[7];                       //muuttuja johon EEPROMista tulleet "kirjaimet" kerätään
     
-    for(int x=0; x<length; x++){
+    for(int x=0; x<length; x++){      // luetaan pelaajan pisteet EEPROMista.
       nimi[x] = EEPROM.read(nimiAddress + x);
     }
     
-    int pisteet = EEPROM.read(pisteAddress);
+    int pisteet = EEPROM.read(pisteAddress);    //luetaan pelaajan pisteet EEPROMista.
     
-    strcpy(leaderBoard[index][0], nimi);
+    strcpy(leaderBoard[index][0], nimi);                          //siirtää muuttujiin kerätyt nimen ja pisteet taulukkoon.
     strcpy(leaderBoard[index][1], itoa(pisteet, numArray, 10));
     nimiAddress+=8;
-    pisteAddress+=8;
+    pisteAddress+=8;    // indexin siirtyminen seuraavan pelaajan kohdalle, havainnollistus toisessa EEPROM funktiossa.
   }
 
 
