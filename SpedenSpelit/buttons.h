@@ -16,4 +16,6 @@ const byte lastPin =  5; // Last PinChangeInterrupt on D-bus
 */
 void initButtonsAndButtonInterrupts(void);
 
+void buttonInterrupts(void);
+
 #endif

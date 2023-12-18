@@ -1,13 +1,49 @@
+#include <TFT.h>  
+#include <SPI.h>
 #include "display.h"
 #include "buttons.h"
 #include "leds.h"
 #include "SpedenSpelit.h"
+#include "leaderboard.h"
 
 volatile int randomNumbers[100];
 volatile int userNumbers[100];
 volatile int currentNum = 0; 
 volatile int currentUserNum = 0;
 volatile bool timeToCheckGameStatus = false;
+volatile int gameStatus = 0;
+
+//Nappikeskeytyskoodi
+unsigned long debounceDelay = 50;
+static unsigned long last_interrupt_time1 = 0;
+static unsigned long last_interrupt_time2 = 0;
+static unsigned long last_interrupt_time3 = 0;
+static unsigned long last_interrupt_time4 = 0;
+static unsigned long last_interrupt_time5 = 0;
+
+int button1state;
+int button2state;
+int button3state;
+int button4state;
+int button5state;
+
+int lastbutton1state = LOW;
+int lastbutton2state = LOW;
+int lastbutton3state = LOW;
+int lastbutton4state = LOW;
+int lastbutton5state = LOW;
+
+//leaderboard
+volatile int tila[2] = {0, 0};
+char name[10];
+char leaderBoard[5][2][7];
+char kirjaimet[4][7] = {{'A', 'B', 'C', 'D', 'E', 'F', 'G'}, {'H', 'I', 'J', 'K', 'L', 'M', 'N'}, {'O', 'P', 'Q', 'R', 'S', 'T', 'U'}, {'V', 'W', 'X', 'Y', 'Z'}};
+
+// Nämä muutetaan, pinnit arduinoon
+#define cs   10
+#define dc   9
+#define rst  8
+TFT TFTscreen = TFT(cs, dc, rst);
 
 void setup()
 {
@@ -18,7 +54,9 @@ void setup()
   initializeDisplay();
   initializeLeds();
   initializeTimer();
-
+  initButtonsAndButtonInterrupts();
+  initLeaderboard();
+  showLeaderboard();
   showResult(0);
 }
 
@@ -40,36 +78,130 @@ ISR(PCINT2_vect) {
 	 interrupts from 2,3,4,5 pins for Game push buttons
 	 and for pin 6 for start Game push button.
    */
+    unsigned long interrupt_time1 = millis();
+    unsigned long interrupt_time2 = millis();
+    unsigned long interrupt_time3 = millis();
+    unsigned long interrupt_time4 = millis();
+    unsigned long interrupt_time5 = millis();
 
-   if (digitalRead(2) == LOW) {
-      userNumbers[currentUserNum] = 0;
-      timeToCheckGameStatus = true;
-   } else if (digitalRead(3) == LOW) {
-      userNumbers[currentUserNum] = 1;
-      timeToCheckGameStatus = true;
-   } else if (digitalRead(4) == LOW) {
-      userNumbers[currentUserNum] = 2;
-      timeToCheckGameStatus = true;
-   } else if (digitalRead(5) == LOW) {
-      userNumbers[currentUserNum] = 3;
-      timeToCheckGameStatus = true;
-   }
+    int reading1 = digitalRead(A10);
+    int reading2 = digitalRead(A11);
+    int reading3 = digitalRead(A12);
+    int reading4 = digitalRead(A13);
+    int reading5 = digitalRead(A14);
 
-   if (digitalRead(6) == LOW) {
-    startTheGame();
-   }
+    if (reading1 != lastbutton1state){
+      last_interrupt_time1 = millis();
+    }
+      if (reading1 != button1state){
+        button1state = reading1;
+
+        if (button1state == 0){
+          if(interrupt_time1 - last_interrupt_time1 > debounceDelay){
+            Serial.println("Keskeyttävä pinni on: 2");
+            last_interrupt_time1 = interrupt_time1;
+            if (gameStatus == 1 && currentUserNum < currentNum) {
+              userNumbers[currentUserNum] = 0;
+              timeToCheckGameStatus = true;
+            } else if(gameStatus == 2) {
+              moveLeft();
+            }
+          }
+        }
+      }
+
+    if (reading2 != lastbutton2state){
+      last_interrupt_time2 = millis();
+    }
+      if (reading2 != button2state){
+        button2state = reading2;
+      
+        if (button2state == 0){
+          if(interrupt_time2 - last_interrupt_time2 > debounceDelay){
+            Serial.println("Keskeyttävä pinni on: 3");
+            if (gameStatus == 1 && currentUserNum < currentNum) {
+              userNumbers[currentUserNum] = 1;
+              timeToCheckGameStatus = true;
+            } else if(gameStatus == 2) {
+              moveUp();
+            }
+            last_interrupt_time2 = interrupt_time2;
+          }
+        }
+      }
+
+    if (reading3 != lastbutton3state){
+      last_interrupt_time3 = millis();
+    }
+      if (reading3 != button3state){
+        button3state = reading3;
+      
+        if (button3state == 0){
+          if(interrupt_time3 - last_interrupt_time3 > debounceDelay){
+            Serial.println("Keskeyttävä pinni on: 4");
+            if(gameStatus == 1 && currentUserNum < currentNum) {
+              userNumbers[currentUserNum] = 2;
+              timeToCheckGameStatus = true;
+            } else if(gameStatus == 2) {
+              moveDown();
+            }
+            last_interrupt_time3 = interrupt_time3;
+          }
+        }
+      }
+
+      if (reading4 != lastbutton4state){
+      last_interrupt_time4 = millis();
+    }
+      if (reading4 != button4state){
+        button4state = reading4;
+      
+        if (button4state == 0){
+          if(interrupt_time4 - last_interrupt_time4 > debounceDelay){
+            Serial.println("Keskeyttävä pinni on: 5");
+            if(gameStatus == 1 && currentUserNum < currentNum) {
+              userNumbers[currentUserNum] = 3;
+              timeToCheckGameStatus = true;
+            } else if(gameStatus == 2) {
+              moveRight();
+            }
+            last_interrupt_time4 = interrupt_time4;
+          }
+        }
+      }
+
+      if (reading5 != lastbutton5state){
+      last_interrupt_time5 = millis();
+    }
+      if (reading5 != button5state){
+        button5state = reading5;
+      
+        if (button5state == 0){
+          if(interrupt_time5 - last_interrupt_time5 > debounceDelay){
+            Serial.println("Keskeyttävä pinni on: 6");
+            if(gameStatus == 0) {
+              startTheGame();
+            } else if(gameStatus == 2) {
+              writeLetter();
+            } else if(gameStatus == 3) {
+              startTheGame();
+            }
+            last_interrupt_time5 = interrupt_time5;
+          }
+        }
+    }
 }
 
 
 ISR(TIMER1_COMPA_vect)
 {
   
-  if ((currentNum % 10) == 0) {
-    OCR1A -= OCR1A * 0.1;
+  if ((currentNum % 10) == 0 && currentNum != 0) {
+    OCR1A *= 0.8;
   }
-
-  randomNumbers[currentNum] = random(0,4);
   clearAllLeds();
+  //Tästä siirretty ledihomma looppiin, jotta pieni tauko valon palaessa
+  randomNumbers[currentNum] = random(0,4);
   setLed(randomNumbers[currentNum]);
   currentNum++;
   /*
@@ -102,6 +234,8 @@ void initializeTimer(void)
 
   TCCR1B |= B00000100; //Prescaler 256
 
+  TIMSK1 &= B00000000; //Nämä pois päältä
+
   //Lasketaan tähän luku, johon asti timerin pitää laskea sekunnin keskeytyksen saamiseksi
   OCR1A = 62500;
   TCNT1  = 0;
@@ -112,6 +246,11 @@ void checkGame(byte nbrOfButtonPush)
 	// see requirements for the function from SpedenSpelit.h
   if (randomNumbers[currentUserNum] != nbrOfButtonPush) {
     stopTheGame();
+    setWriting();
+    timeToCheckGameStatus = false;
+  } else if(currentUserNum == 99) {
+    stopTheGame();
+    setWriting();
     timeToCheckGameStatus = false;
   } else if (randomNumbers[currentUserNum] == nbrOfButtonPush){
     currentUserNum++;
@@ -134,14 +273,255 @@ void initializeGame()
 
 void startTheGame()
 {
-  TIMSK1 |= B00000010; //Enabloidaan compare match/keskeytykset
+  tila[0] = 0;
+  tila[1] = 0;
+  for (int i = 0; i < 10; i++) {
+    name[i] = 0;
+  }
+  gameStatus = 1;
   initializeGame();
+  TIMSK1 |= B00000010; //Enabloidaan compare match/keskeytykset
    // see requirements for the function from SpedenSpelit.h
 }
 
 void stopTheGame() {
-  TIMSK1 |= B00000000; //Disabloidaan compare match/keskeytykset
-  TCNT1  = 0;
+  gameStatus = 2;
+  clearAllLeds();
+  TIMSK1 &= B00000000; //Disabloidaan compare match/keskeytykset
+  TCNT1 = 0;
   OCR1A = 62500;
 }
 
+//Leaderboardin funktiota
+
+void moveUp() {
+  clearCurrentLine();
+  if (tila[0] > 0)
+  tila[0] -= 1;
+  writePos();
+}
+
+void moveLeft() {
+  clearCurrentLine();
+  if (tila[1] > 0)
+  tila[1] -= 1;
+  writePos();
+}
+
+void moveDown() {
+  clearCurrentLine();
+
+  if (tila[0] < 3) {
+    tila[0] += 1;
+  }
+
+  if(tila[0] == 3 && tila[1] > 5) {
+    tila[1] = 5;
+  }
+  writePos();
+}
+
+void moveRight() {
+  clearCurrentLine();
+  if (tila[1] < 6 && tila[0] != 3) {
+    tila[1] += 1;
+    writePos();
+  } else if (tila[0] == 3 && tila[1] < 5) {
+    tila[1] += 1;
+    writePos();
+  } else {
+    writePos();
+  }
+}
+
+void writePos() {
+    int y = tila[0];
+    int x = tila[1];
+    int x2 = 0;
+
+    if (x == 0) {
+    x = 1;
+    x2 = x + 14;
+    } else if (x == 1) {
+    x = 25;
+    x2 = x + 14;
+    } else if (x == 2) {
+    x = 49;
+    x2 = x + 14;
+    } else if (x == 3) {
+    x = 73;
+    x2 = x + 14;
+    } else if (x == 4) {
+    x = 97;
+    x2 = x + 14;
+    } else if (x == 5) {
+    x = 121;
+    x2 = x + 14;
+    } else if (x == 6) {
+    x = 145;
+    x2 = x + 14;
+    }
+
+    if (y == 0) {
+    y = 41;
+    } else if (y == 1) {
+    y = 65;
+    } else if (y == 2) {
+    y = 89;
+    } else if (y == 3) {
+    y = 113;
+    }
+
+    TFTscreen.line(x,y,x2,y);
+}
+
+void writeLetter() {
+    if(gameStatus == 2) {
+        if (tila[0] == 3 && tila[1] == 5) {
+        saveResult();
+        } else {
+          if(countLetters(name) != 6) {
+              char letter = kirjaimet[tila[0]][tila[1]];
+              int numOfLetter = countLetters(name);
+              name[numOfLetter] = letter;
+              TFTscreen.text(name, 3, 3);
+          }
+        }
+    }
+}
+
+//Tallennetaan tulokset
+void saveResult() {
+    char numArr[16];
+    //Jos paras tulos, jokainen if yhtä rankkia alemmalle
+    if(atoi(leaderBoard[0][1]) < currentUserNum) {
+        strcpy(leaderBoard[4][0], leaderBoard[3][0]);
+        strcpy(leaderBoard[4][1], leaderBoard[3][1]);
+        strcpy(leaderBoard[3][0], leaderBoard[2][0]);
+        strcpy(leaderBoard[3][1], leaderBoard[2][1]);
+        strcpy(leaderBoard[2][0], leaderBoard[1][0]);
+        strcpy(leaderBoard[2][1], leaderBoard[1][1]);
+        strcpy(leaderBoard[1][0], leaderBoard[0][0]);
+        strcpy(leaderBoard[1][1], leaderBoard[0][1]);
+        strcpy(leaderBoard[0][1], itoa(currentUserNum, numArr, 10));
+        strcpy(leaderBoard[0][0], name);
+        Serial.println("TEST");
+    } else if(atoi(leaderBoard[1][1]) < currentUserNum) {
+        strcpy(leaderBoard[4][0], leaderBoard[3][0]);
+        strcpy(leaderBoard[4][1], leaderBoard[3][1]);
+        strcpy(leaderBoard[3][0], leaderBoard[2][0]);
+        strcpy(leaderBoard[3][1], leaderBoard[2][1]);
+        strcpy(leaderBoard[2][0], leaderBoard[1][0]);
+        strcpy(leaderBoard[2][1], leaderBoard[1][1]);
+        strcpy(leaderBoard[1][1], itoa(currentUserNum, numArr, 10));
+        strcpy(leaderBoard[1][0], name);
+    } else if(atoi(leaderBoard[2][1]) < currentUserNum) {
+        strcpy(leaderBoard[4][0], leaderBoard[3][0]);
+        strcpy(leaderBoard[4][1], leaderBoard[3][1]);
+        strcpy(leaderBoard[3][0], leaderBoard[2][0]);
+        strcpy(leaderBoard[3][1], leaderBoard[2][1]);
+        strcpy(leaderBoard[2][1], itoa(currentUserNum, numArr, 10));
+        strcpy(leaderBoard[2][0], name);
+    } else if(atoi(leaderBoard[3][1]) < currentUserNum) {
+        strcpy(leaderBoard[4][0], leaderBoard[3][0]);
+        strcpy(leaderBoard[4][1], leaderBoard[3][1]);
+        strcpy(leaderBoard[3][1], itoa(currentUserNum, numArr, 10));
+        strcpy(leaderBoard[3][0], name);
+    } else if(atoi(leaderBoard[4][1]) < currentUserNum) {
+        strcpy(leaderBoard[4][1], itoa(currentUserNum, numArr, 10));
+        strcpy(leaderBoard[4][0], name);
+    }
+    gameStatus = 3;
+    showLeaderboard();
+}
+
+void setWriting() {
+    TFTscreen.background(0, 0, 0);
+    //write letters and line
+    TFTscreen.line(0,20,160,20);
+    TFTscreen.text("A B C D E F G", 3, 26);
+    TFTscreen.text("H I J K L M N", 3, 50);
+    TFTscreen.text("O P Q R S T U", 3, 74);
+    TFTscreen.text("V W X Y Z >", 3, 98);
+
+    //start line
+    TFTscreen.line(1,41,15,41);
+}
+
+void clearCurrentLine() {
+
+    TFTscreen.stroke(0, 0, 0);
+
+    int y = tila[0];
+    int x = tila[1];
+    int x2 = 0;
+
+    if (x == 0) {
+    x = 1;
+    x2 = x + 14;
+    } else if (x == 1) {
+    x = 25;
+    x2 = x + 14;
+    } else if (x == 2) {
+    x = 49;
+    x2 = x + 14;
+    } else if (x == 3) {
+    x = 73;
+    x2 = x + 14;
+    } else if (x == 4) {
+    x = 97;
+    x2 = x + 14;
+    } else if (x == 5) {
+    x = 121;
+    x2 = x + 14;
+    } else if (x == 6) {
+    x = 145;
+    x2 = x + 14;
+    }
+
+    if (y == 0) {
+    y = 41;
+    } else if (y == 1) {
+    y = 65;
+    } else if (y == 2) {
+    y = 89;
+    } else if (y == 3) {
+    y = 113;
+    }
+    
+    TFTscreen.line(x,y,x2,y);
+    
+    TFTscreen.stroke(255, 255, 255);
+}
+
+void showLeaderboard() {
+  TFTscreen.background(0, 0, 0);
+  TFTscreen.text("NAME", 3, 3);
+  TFTscreen.text("SCORE", 100, 3);
+  TFTscreen.line(0,20,160,20);
+  TFTscreen.text(leaderBoard[0][0], 3, 26);
+  TFTscreen.text(leaderBoard[0][1], 130, 26);
+  TFTscreen.text(leaderBoard[1][0], 3, 46);
+  TFTscreen.text(leaderBoard[1][1], 130, 46);
+  TFTscreen.text(leaderBoard[2][0], 3, 66);
+  TFTscreen.text(leaderBoard[2][1], 130, 66);
+  TFTscreen.text(leaderBoard[3][0], 3, 86);
+  TFTscreen.text(leaderBoard[3][1], 130, 86);
+  TFTscreen.text(leaderBoard[4][0], 3, 106);
+  TFTscreen.text(leaderBoard[4][1], 130, 106);
+}
+
+void clearScreen() {
+  TFTscreen.background(0, 0, 0);
+}
+
+void initLeaderboard() {
+    TFTscreen.begin();
+
+    // clear the screen with a black background
+    TFTscreen.background(0, 0, 0);
+    //set the text size
+    TFTscreen.setTextSize(2);
+    //set text color
+    TFTscreen.stroke(255, 255, 255);
+}

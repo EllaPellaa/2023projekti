@@ -1,8 +1,8 @@
 #include "display.h"
 
-int shiftClock = 11; // antaa kellotaajuuden koodille
-int latchClock = 10; //Kun laittaa high niin tiedot tallettuu srorageen/latch rekisteriin joka tulee sitten outputtiin
-int serialInput = 8; //Syöttää dataa lol
+int shiftClock = 12; // antaa kellotaajuuden koodille
+int latchClock = 14; //Kun laittaa high niin tiedot tallettuu srorageen/latch rekisteriin joka tulee sitten outputtiin
+int serialInput = 17; //Syöttää dataa lol
 
   int numerot_bitteina [10][8]{
   {1,1,1,1,1,1,0,0}, // numero 0
