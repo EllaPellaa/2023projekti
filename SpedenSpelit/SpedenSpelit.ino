@@ -12,6 +12,7 @@ volatile int userNumbers[100];
 volatile int currentNum = 0; 
 volatile int currentUserNum = 0;
 volatile bool timeToCheckGameStatus = false;
+volatile bool timeToCheckLeds = false;
 volatile int gameStatus = 0;
 
 //Nappikeskeytyskoodi
@@ -70,6 +71,12 @@ void loop()
   */
   if(timeToCheckGameStatus == true) {
     checkGame(userNumbers[currentUserNum]);
+  }
+
+  if(timeToCheckLeds == true && TCNT1 == 6200) {
+    setLed(randomNumbers[currentNum]);
+    currentNum++;
+    timeToCheckLeds = false;
   }
 }
 
@@ -196,15 +203,20 @@ ISR(PCINT2_vect) {
 
 ISR(TIMER1_COMPA_vect)
 {
-  
+  TCNT1  = 0; 
+  if(currentUserNum == 99) {
+    stopTheGame();
+    setWriting();
+    timeToCheckGameStatus = false;
+  }
+
   if ((currentNum % 10) == 0 && currentNum != 0) {
-    OCR1A *= 0.8;
+    OCR1A *= 0.88;
   }
   clearAllLeds();
   //Tästä siirretty ledihomma looppiin, jotta pieni tauko valon palaessa
   randomNumbers[currentNum] = random(0,4);
-  setLed(randomNumbers[currentNum]);
-  currentNum++;
+  timeToCheckLeds = true;
   /*
     Here you generate a random number that is used to
 	set certain led.
@@ -216,7 +228,6 @@ ISR(TIMER1_COMPA_vect)
 	Each generated random number must be stored for later
 	comparision against player push button presses.
   */
-  
 }
 
 
@@ -438,6 +449,7 @@ void saveResult() {
 }
 
 void setWriting() {
+    noInterrupts();
     TFTscreen.background(0, 0, 0);
     //write letters and line
     TFTscreen.line(0,20,160,20);
@@ -448,6 +460,7 @@ void setWriting() {
 
     //start line
     TFTscreen.line(1,41,15,41);
+    interrupts();
 }
 
 void clearCurrentLine() {
@@ -545,7 +558,7 @@ void writeLeaderboardToEEPROM(){
   char nimi[7];
   for(int x = 0; x<5; x++){   // suoritetaan viisi kertaa; kirjoitetaan EEPROMiin kaikki taulukon viisi tulosta.
 
-    strcpy(nimi,leaderBoard[x][0];  //napataan nimi taulukosta  
+    strcpy(nimi,leaderBoard[x][0]);  //napataan nimi taulukosta  
 
     int pisteet;
     pisteet = atoi(leaderBoard[x][1]);  //.. ja pistetulos
